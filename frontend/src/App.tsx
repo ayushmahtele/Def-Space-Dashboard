@@ -65,15 +65,12 @@ export default function App() {
   async function handleMapClick(lat: number, lon: number) {
     let name = `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
     try {
-      // Nominatim (OSM) reverse geocoding — free, no key, ~1 req/sec.
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10`);
-      if (res.ok) {
-        const data = await res.json();
-        const addr = data.address ?? {};
-        name = addr.city || addr.town || addr.county || addr.state || data.display_name?.split(",")[0] || name;
-      }
+      // Looked up by the backend (Nominatim, with Photon as a fallback, cached) rather than
+      // calling Nominatim from the browser, which hits CORS / rate-limit / network-certificate
+      // errors on some networks and then leaves the AOI named by raw coordinates.
+      name = (await api.reverseGeocode(lat, lon)).name;
     } catch {
-      // Offline or rate-limited — fall back to raw coordinates as the name.
+      // Backend unreachable — fall back to raw coordinates as the name.
     }
     setMapPrefill({ lat, lon, name });
   }

@@ -31,5 +31,10 @@ export const api = {
 
   pdfUrl: (pdfPath: string) => `${BASE_URL}${pdfPath}`,
 
+  reverseGeocode: (lat: number, lon: number) =>
+    request<{ name: string; state: string | null; country: string | null }>(
+      `/agents/gis/reverse-geocode?lat=${lat}&lon=${lon}`,
+    ),
+
   modelPerformance: () => request<ModelPerformanceResponse>("/agents/predict/model-performance"),
 };

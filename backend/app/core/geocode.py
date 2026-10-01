@@ -29,11 +29,10 @@ class PlaceInfo:
 _cache: dict[tuple[float, float], PlaceInfo] = {}
 
 
-async def reverse_geocode(lat: float, lon: float) -> PlaceInfo | None:
-    key = (round(lat, 3), round(lon, 3))
-    if key in _cache:
-        return _cache[key]
+PHOTON_URL = "https://photon.komoot.io/reverse"  # second free OSM-based geocoder, no key
 
+
+async def _nominatim(client: httpx.AsyncClient, lat: float, lon: float) -> PlaceInfo:
     params = {
         "lat": lat,
         "lon": lon,
@@ -42,20 +41,60 @@ async def reverse_geocode(lat: float, lon: float) -> PlaceInfo | None:
         "addressdetails": 1,
         "accept-language": "en",
     }
-    try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(8.0), headers={"User-Agent": APP_USER_AGENT}) as client:
-            resp = await client.get(NOMINATIM_URL, params=params)
-            resp.raise_for_status()
-            address = resp.json().get("address", {})
-    except Exception:
-        return None  # geocoding is a nice-to-have; callers fall back to the AOI name alone
-
-    info = PlaceInfo(
+    resp = await client.get(NOMINATIM_URL, params=params)
+    resp.raise_for_status()
+    address = resp.json().get("address", {})
+    if not address:
+        raise ValueError("Nominatim returned no address (e.g. open ocean)")
+    return PlaceInfo(
         place=address.get("city") or address.get("town") or address.get("village") or address.get("municipality"),
         district=address.get("state_district") or address.get("county"),
         state=address.get("state"),
         country=address.get("country"),
         country_code=(address.get("country_code") or "").lower() or None,
     )
-    _cache[key] = info
+
+
+async def _photon(client: httpx.AsyncClient, lat: float, lon: float) -> PlaceInfo:
+    resp = await client.get(PHOTON_URL, params={"lat": lat, "lon": lon, "lang": "en"})
+    resp.raise_for_status()
+    features = resp.json().get("features") or []
+    if not features:
+        raise ValueError("Photon returned no place")
+    p = features[0].get("properties", {})
+    is_settlement = p.get("type") in {"city", "town", "village"} or p.get("osm_value") in {"city", "town", "village"}
+    return PlaceInfo(
+        place=p.get("city") or (p.get("name") if is_settlement else None),
+        district=p.get("county") or p.get("district"),
+        state=p.get("state"),
+        country=p.get("country"),
+        country_code=(p.get("countrycode") or "").lower() or None,
+    )
+
+
+async def reverse_geocode(lat: float, lon: float) -> PlaceInfo | None:
+    """Nominatim first, Photon if Nominatim is rate-limiting or down. None if both fail."""
+    key = (round(lat, 3), round(lon, 3))
+    if key in _cache:
+        return _cache[key]
+
+    info = None
+    async with httpx.AsyncClient(timeout=httpx.Timeout(8.0), headers={"User-Agent": APP_USER_AGENT}) as client:
+        for source in (_nominatim, _photon):
+            try:
+                info = await source(client, lat, lon)
+                break
+            except Exception:
+                continue  # geocoding is a nice-to-have; callers fall back to coordinates
+    if info is not None:
+        _cache[key] = info
     return info
+
+
+def display_name(info: PlaceInfo | None, lat: float, lon: float) -> str:
+    """Short human name for an AOI picked on the map, e.g. "Kanpur"."""
+    if info:
+        for candidate in (info.place, info.district, info.state, info.country):
+            if candidate:
+                return candidate
+    return f"{lat:.3f}, {lon:.3f}"
