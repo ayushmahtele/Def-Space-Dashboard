@@ -19,7 +19,7 @@ import joblib
 import pandas as pd
 import shap
 
-from app.core.http_client import new_client
+from app.core.weather_sources import get_met_norway_timeseries, get_open_meteo
 from app.models.schemas import (
     AgentEnvelope,
     AgentName,
@@ -67,6 +67,49 @@ def _load_background() -> pd.DataFrame:
     return joblib.load(BACKGROUND_PATH)
 
 
+async def _daily_weather_inputs(lat: float, lon: float, day: str, params: dict) -> dict[str, float]:
+    """Today's daily weather features — Open-Meteo first, MET Norway as a fallback (Render's
+    shared outgoing IPs sometimes hit Open-Meteo's rate limit; see app/core/weather_sources.py)."""
+    try:
+        daily = (await get_open_meteo(params))["daily"]
+        return {
+            "temp_max_c": daily["temperature_2m_max"][0],
+            "temp_min_c": daily["temperature_2m_min"][0],
+            "precipitation_mm": daily["precipitation_sum"][0],
+            "windspeed_max_kmh": daily["windspeed_10m_max"][0],
+            "windgusts_max_kmh": daily["windgusts_10m_max"][0],
+            "cloudcover_mean_pct": daily["cloudcover_mean"][0],
+        }
+    except Exception as open_meteo_exc:
+        try:
+            series = await get_met_norway_timeseries(lat, lon)
+        except Exception as met_exc:
+            raise RuntimeError(f"Open-Meteo: {open_meteo_exc}; MET Norway: {met_exc}") from met_exc
+
+    # MET Norway gives a forecast timeseries from the current hour onward, so these daily
+    # values cover the rest of the (UTC) day rather than all 24 hours — close enough for
+    # a go/no-go screen, and only used when Open-Meteo is unavailable.
+    rows = [entry for entry in series if entry["time"].startswith(day)] or series[:6]
+    details = [entry["data"]["instant"]["details"] for entry in rows]
+    temps = [d["air_temperature"] for d in details if "air_temperature" in d]
+    winds = [d["wind_speed"] * 3.6 for d in details if "wind_speed" in d]  # m/s -> km/h
+    gusts = [d.get("wind_speed_of_gust", d.get("wind_speed", 0.0)) * 3.6 for d in details]
+    clouds = [d["cloud_area_fraction"] for d in details if "cloud_area_fraction" in d]
+    hourly_precip = [
+        entry["data"].get("next_1_hours", {}).get("details", {}).get("precipitation_amount")
+        for entry in rows
+    ]
+    precip = sum(p for p in hourly_precip if p is not None)
+    return {
+        "temp_max_c": max(temps),
+        "temp_min_c": min(temps),
+        "precipitation_mm": round(precip, 2),
+        "windspeed_max_kmh": round(max(winds), 1),
+        "windgusts_max_kmh": round(max(gusts), 1),
+        "cloudcover_mean_pct": round(sum(clouds) / len(clouds), 1),
+    }
+
+
 async def predict_go_no_go(aoi_name: str, lat: float, lon: float, target_date: Optional[str] = None) -> AgentEnvelope:
     try:
         model, feature_columns = _load_model()
@@ -87,20 +130,8 @@ async def predict_go_no_go(aoi_name: str, lat: float, lon: float, target_date: O
         "timezone": "UTC",
     }
     try:
-        async with new_client() as client:
-            resp = await client.get(OPEN_METEO_FORECAST_URL, params=params)
-            resp.raise_for_status()
-            payload = resp.json()
-        daily = payload["daily"]
-        weather_inputs = {
-            "temp_max_c": daily["temperature_2m_max"][0],
-            "temp_min_c": daily["temperature_2m_min"][0],
-            "precipitation_mm": daily["precipitation_sum"][0],
-            "windspeed_max_kmh": daily["windspeed_10m_max"][0],
-            "windgusts_max_kmh": daily["windgusts_10m_max"][0],
-            "cloudcover_mean_pct": daily["cloudcover_mean"][0],
-        }
-    except Exception as exc:  # network/upstream failure — orchestrator degrades gracefully
+        weather_inputs = await _daily_weather_inputs(lat, lon, day, params)
+    except Exception as exc:  # both weather sources down — orchestrator degrades gracefully
         return AgentEnvelope(agent=AgentName.predict, status=AgentStatus.error, error=str(exc))
 
     row = pd.DataFrame([[weather_inputs[col] for col in feature_columns]], columns=feature_columns)

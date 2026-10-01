@@ -7,5 +7,5 @@ router = APIRouter(prefix="/agents/news", tags=["news"])
 
 
 @router.get("", response_model=AgentEnvelope)
-async def get_news(query: str) -> AgentEnvelope:
-    return await fetch_news(query)
+async def get_news(query: str, lat: float | None = None, lon: float | None = None) -> AgentEnvelope:
+    return await fetch_news(query, lat, lon)

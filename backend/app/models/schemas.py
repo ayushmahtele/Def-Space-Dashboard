@@ -79,6 +79,7 @@ class WeatherResult(BaseModel):
     forecast: List[ForecastEntry] = []
     operational_flag: bool
     flag_reason: Optional[str] = None
+    source: Optional[str] = None  # which upstream provided the data (Open-Meteo or MET Norway)
 
 
 # ---------------------------------------------------------------------------

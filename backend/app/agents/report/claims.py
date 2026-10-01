@@ -18,7 +18,7 @@ def build_claims(envelopes: dict[str, AgentEnvelope]) -> list[ProvenancedClaim]:
         text = f"Current conditions: {d['temperature_c']}°C, wind {d['windspeed_kmh']} km/h."
         if d.get("flag_reason"):
             text += f" Operational flag: {d['flag_reason']}."
-        claims.append(ProvenancedClaim(text=text, source_agent=AgentName.weather, source_detail="Open-Meteo current + hourly forecast"))
+        claims.append(ProvenancedClaim(text=text, source_agent=AgentName.weather, source_detail=d.get("source") or "Open-Meteo current + hourly forecast"))
 
     news = envelopes.get(AgentName.news.value)
     if news and news.status == AgentStatus.ok and news.data:

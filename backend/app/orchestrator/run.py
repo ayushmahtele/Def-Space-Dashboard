@@ -46,8 +46,9 @@ async def orchestrate(query: str, aoi: AOI) -> OrchestrateResponse:
         tasks[AgentName.weather] = _safe(fetch_weather(aoi.name, aoi.lat, aoi.lon), AgentName.weather)
     if AgentName.news in selected:
         # News APIs expect a short keyword/region term, not the full natural-language
-        # question (GNews 400s on long, comma-heavy queries) — search by AOI name.
-        tasks[AgentName.news] = _safe(fetch_news(aoi.name), AgentName.news)
+        # question (GNews 400s on long, comma-heavy queries) — search by AOI name, pinned
+        # to the AOI's real location (state + country) so same-named places don't leak in.
+        tasks[AgentName.news] = _safe(fetch_news(aoi.name, aoi.lat, aoi.lon), AgentName.news)
     if AgentName.vision in selected:
         tasks[AgentName.vision] = _safe(fetch_vision(aoi.name, aoi.lat, aoi.lon, None, None), AgentName.vision)
     if AgentName.rag in selected:
