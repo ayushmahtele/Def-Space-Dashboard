@@ -1,0 +1,137 @@
+{
+  "dataset": {
+    "total_rows": 469,
+    "train_rows": 234,
+    "test_rows": 235,
+    "train_date_start": "2016-03-04",
+    "train_date_end": "2023-12-29",
+    "test_date_start": "2024-01-03",
+    "test_date_end": "2026-07-30",
+    "train_go": 220,
+    "train_no_go": 14,
+    "test_go": 225,
+    "test_no_go": 10,
+    "split_method": "Temporal split (not random): train on all launches before 2024, test on 2024 onward. Chosen over a random 80/20 split because 2016-2021 alone contains only 5 real NO-GO examples \u2014 too few to anchor a training-only window \u2014 and this split roughly doubles the NO-GO count available in the test set versus the random split used previously."
+  },
+  "imbalance_note": "GO/NO-GO is heavily imbalanced (~5% NO-GO across the full dataset, real launches, not sampled) because NO-GO calls are genuinely rare events. Accuracy alone is misleading here \u2014 a model that always predicts GO would score ~91% accuracy on the test set while catching zero NO-GO cases. Precision/recall/F1 on the NO-GO class specifically are the numbers that actually reflect whether this model is useful.",
+  "selection_rule": "The deployed model is the one with the best F1-score on the NO-GO class specifically (ties broken by macro-avg F1, then accuracy) \u2014 not the highest raw accuracy, which is misleading on this imbalanced a dataset.",
+  "deployed_model_key": "random_forest",
+  "models": [
+    {
+      "key": "random_forest",
+      "display_name": "Random Forest",
+      "accuracy": 0.8936170212765957,
+      "go": {
+        "precision": 0.9672897196261683,
+        "recall": 0.92,
+        "f1_score": 0.9430523917995444,
+        "support": 225
+      },
+      "no_go": {
+        "precision": 0.14285714285714285,
+        "recall": 0.3,
+        "f1_score": 0.1935483870967742,
+        "support": 10
+      },
+      "macro_f1": 0.5683003894481593,
+      "confusion_matrix": [
+        [
+          3,
+          7
+        ],
+        [
+          18,
+          207
+        ]
+      ],
+      "is_deployed": true
+    },
+    {
+      "key": "xgboost",
+      "display_name": "XGBoost",
+      "accuracy": 0.8638297872340426,
+      "go": {
+        "precision": 0.966183574879227,
+        "recall": 0.8888888888888888,
+        "f1_score": 0.9259259259259259,
+        "support": 225
+      },
+      "no_go": {
+        "precision": 0.10714285714285714,
+        "recall": 0.3,
+        "f1_score": 0.15789473684210525,
+        "support": 10
+      },
+      "macro_f1": 0.5419103313840156,
+      "confusion_matrix": [
+        [
+          3,
+          7
+        ],
+        [
+          25,
+          200
+        ]
+      ],
+      "is_deployed": false
+    },
+    {
+      "key": "logistic_regression",
+      "display_name": "Logistic Regression",
+      "accuracy": 0.6638297872340425,
+      "go": {
+        "precision": 0.9802631578947368,
+        "recall": 0.6622222222222223,
+        "f1_score": 0.7904509283819628,
+        "support": 225
+      },
+      "no_go": {
+        "precision": 0.08433734939759036,
+        "recall": 0.7,
+        "f1_score": 0.15053763440860216,
+        "support": 10
+      },
+      "macro_f1": 0.4704942813952825,
+      "confusion_matrix": [
+        [
+          7,
+          3
+        ],
+        [
+          76,
+          149
+        ]
+      ],
+      "is_deployed": false
+    },
+    {
+      "key": "gradient_boosting",
+      "display_name": "Gradient Boosting",
+      "accuracy": 0.9404255319148936,
+      "go": {
+        "precision": 0.9567099567099567,
+        "recall": 0.9822222222222222,
+        "f1_score": 0.9692982456140351,
+        "support": 225
+      },
+      "no_go": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 10
+      },
+      "macro_f1": 0.48464912280701755,
+      "confusion_matrix": [
+        [
+          0,
+          10
+        ],
+        [
+          4,
+          221
+        ]
+      ],
+      "is_deployed": false
+    }
+  ]
+}

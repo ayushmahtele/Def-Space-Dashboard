@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  --color-ops-bg: #0a0e14;
+  --color-ops-panel: #10161f;
+  --color-ops-panel-raised: #161d29;
+  --color-ops-border: #232e3d;
+  --color-ops-border-strong: #34455c;
+  --color-ops-text: #e6edf3;
+  --color-ops-text-dim: #7b8a9c;
+  --color-ops-text-faint: #4c5a6c;
+  --color-ops-accent: #22d3ee;
+  --color-ops-accent-dim: #0e7490;
+
+  --color-sev-low: #22c55e;
+  --color-sev-low-bg: rgba(34, 197, 94, 0.12);
+  --color-sev-medium: #f59e0b;
+  --color-sev-medium-bg: rgba(245, 158, 11, 0.12);
+  --color-sev-high: #ef4444;
+  --color-sev-high-bg: rgba(239, 68, 68, 0.14);
+
+  --color-status-ok: #22c55e;
+  --color-status-not-configured: #7b8a9c;
+  --color-status-error: #ef4444;
+  --color-status-skipped: #3b4759;
+}
+
+/*
+  Tokens below come from docs/orchestration_ui_kit/src/styles/theme.css (the
+  Orchestration UI Kit used for the workflow visualization and about page). Merged in
+  rather than imported standalone so there's one token source for the whole app.
+  --font-sans and --font-mono are intentionally NOT repeated here — the kit's values
+  (Inter / JetBrains Mono) are already defined above in the Tailwind @theme block and
+  available as the same var() names.
+
+  Color values are RETINTED from the kit's own defaults (which were purple/violet) to
+  this app's existing cyan/green ops-room palette, so pages built on the kit (Workflow,
+  About) look visually consistent with Dashboard/Home rather than like a bolted-on
+  separate theme. Variable *names* are kept as the kit components reference them by
+  name (e.g. var(--accent-purple)) — only their values changed.
+*/
+:root {
+  color-scheme: dark;
+
+  --bg-deep: #05070c;
+  --bg-base: #070b18;
+  --surface-1: rgba(22, 29, 41, 0.75);
+  --surface-2: rgba(255, 255, 255, 0.035);
+  --surface-glass: rgba(255, 255, 255, 0.04);
+
+  --border-soft: rgba(35, 46, 61, 0.65);
+  --border-mid: rgba(52, 69, 92, 0.65);
+  --border-glow: rgba(34, 211, 238, 0.45);
+
+  --text-primary: rgba(230, 237, 243, 0.95);
+  --text-secondary: #7b8a9c;
+  --text-muted: #4c5a6c;
+  --text-faint: rgba(76, 90, 108, 0.7);
+
+  --accent-purple: #22d3ee;
+  --accent-purple-deep: #0e7490;
+  --accent-blue: #22d3ee;
+  --accent-cyan: #22d3ee;
+  --accent-pink: #f59e0b;
+  --accent-amber: #f59e0b;
+  --accent-green: #22c55e;
+  --accent-violet: #0e7490;
+
+  --tint-purple: rgba(34, 211, 238, 0.12);
+  --tint-blue: rgba(34, 211, 238, 0.1);
+  --tint-green: rgba(34, 197, 94, 0.15);
+
+  --glow-purple: 0 0 32px 3px rgba(34, 211, 238, 0.55);
+  --glow-soft: 0 0 8px rgba(34, 197, 94, 0.6);
+  --shadow-lift: 0 22px 40px rgba(0, 0, 0, 0.6);
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 99px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-8: 48px;
+
+  --grad-accent: linear-gradient(135deg, #0e7490, #22d3ee);
+  --grad-hero:
+    radial-gradient(ellipse at 50% 20%, rgba(34, 211, 238, 0.1), transparent 60%),
+    radial-gradient(ellipse at 50% 90%, rgba(34, 197, 94, 0.08), transparent 55%);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-ops-bg);
+  color: var(--color-ops-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-ops-accent);
+  color: #06222b;
+}
+
+/* Leaflet dark-map tweaks */
+.leaflet-container {
+  background: #0d1219;
+  font-family: var(--font-sans);
+}
+.leaflet-control-attribution {
+  background: rgba(10, 14, 20, 0.7) !important;
+  color: var(--color-ops-text-dim) !important;
+}
+.leaflet-control-attribution a {
+  color: var(--color-ops-accent) !important;
+}
+.leaflet-control-zoom a {
+  background: var(--color-ops-panel) !important;
+  color: var(--color-ops-text) !important;
+  border-color: var(--color-ops-border) !important;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--color-ops-panel-raised);
+  color: var(--color-ops-text);
+}
+
+/* thin scrollbars to match the ops-room density */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ops-border-strong);
+  border-radius: 4px;
+}

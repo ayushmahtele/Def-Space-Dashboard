@@ -1,0 +1,25 @@
+# Backend
+backend/venv/
+backend/.env
+
+backend/data/pdf_exports/*.pdf
+backend/data/watchlist/*.json
+
+__pycache__/
+*.pyc
+backend/uvicorn.out.log
+backend/uvicorn.err.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Third-party kit source archive (extracted copy is tracked under docs/orchestration_ui_kit/)
+docs/orchestration_ui_kit.zip
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

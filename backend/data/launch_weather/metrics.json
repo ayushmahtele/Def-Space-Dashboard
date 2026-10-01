@@ -1,0 +1,42 @@
+{
+  "n_train": 234,
+  "n_test": 235,
+  "classification_report": {
+    "NO-GO": {
+      "precision": 0.14285714285714285,
+      "recall": 0.3,
+      "f1-score": 0.1935483870967742,
+      "support": 10.0
+    },
+    "GO": {
+      "precision": 0.9672897196261683,
+      "recall": 0.92,
+      "f1-score": 0.9430523917995444,
+      "support": 225.0
+    },
+    "accuracy": 0.8936170212765957,
+    "macro avg": {
+      "precision": 0.5550734312416555,
+      "recall": 0.61,
+      "f1-score": 0.5683003894481593,
+      "support": 235.0
+    },
+    "weighted avg": {
+      "precision": 0.9322074823168479,
+      "recall": 0.8936170212765957,
+      "f1-score": 0.9111586043653839,
+      "support": 235.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      3,
+      7
+    ],
+    [
+      18,
+      207
+    ]
+  ],
+  "note": "GO/NO-GO is heavily imbalanced (~5% NO-GO across the full dataset, real launches, not sampled) because NO-GO calls are genuinely rare events. Accuracy alone is misleading here \u2014 a model that always predicts GO would score ~91% accuracy on the test set while catching zero NO-GO cases. Precision/recall/F1 on the NO-GO class specifically are the numbers that actually reflect whether this model is useful."
+}

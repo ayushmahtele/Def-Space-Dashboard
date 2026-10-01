@@ -1,0 +1,123 @@
+/*
+  ─────────────────────────────────────────────────────────────
+  DESIGN SYSTEM — tokens
+  Drop this into your project and import once (e.g. in main.jsx:
+  import './styles/theme.css').
+  Every component in this kit reads from these CSS variables, so
+  to re-skin the whole kit you only edit values here.
+  ─────────────────────────────────────────────────────────────
+*/
+
+:root {
+  /* ── Surfaces (dark, layered) ── */
+  --bg-deep:      #04060f;   /* deepest background, behind everything */
+  --bg-base:      #070b18;   /* main app background */
+  --surface-1:    rgba(20, 24, 40, 0.72);   /* card face */
+  --surface-2:    rgba(255, 255, 255, 0.035); /* subtle raised chip / stat cell */
+  --surface-glass: rgba(255, 255, 255, 0.04); /* glassmorphism panel */
+
+  /* ── Borders ── */
+  --border-soft:  rgba(255, 255, 255, 0.08);
+  --border-mid:   rgba(255, 255, 255, 0.10);
+  --border-glow:  rgba(139, 92, 246, 0.45);  /* active/hover accent border */
+
+  /* ── Text ── */
+  --text-primary:   rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.60);
+  --text-muted:     rgba(255, 255, 255, 0.42);
+  --text-faint:     rgba(255, 255, 255, 0.30);
+
+  /* ── Accents (the signature palette) ── */
+  --accent-purple: #a78bfa;
+  --accent-purple-deep: #8b5cf6;
+  --accent-blue:   #60a5fa;
+  --accent-cyan:   #7dd3fc;
+  --accent-pink:   #f472b6;
+  --accent-amber:  #fbbf24;
+  --accent-green:  #34d399;
+  --accent-violet: #c084fc;
+
+  /* ── Accent tints (for fills/backgrounds) ── */
+  --tint-purple:  rgba(139, 92, 246, 0.12);
+  --tint-blue:    rgba(59, 130, 246, 0.10);
+  --tint-green:   rgba(52, 211, 153, 0.15);
+
+  /* ── Glows ── */
+  --glow-purple:  0 0 32px 3px rgba(139, 92, 246, 0.55);
+  --glow-soft:    0 0 8px rgba(52, 211, 153, 0.6);
+  --shadow-lift:  0 22px 40px rgba(0, 0, 0, 0.6);
+
+  /* ── Radius ── */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 99px;
+
+  /* ── Spacing scale (use consistently) ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-8: 48px;
+
+  /* ── Type ── */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ── Gradients ── */
+  --grad-accent: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  --grad-hero:   radial-gradient(ellipse at 50% 20%, rgba(139,92,246,0.12), transparent 60%),
+                 radial-gradient(ellipse at 50% 90%, rgba(59,130,246,0.09), transparent 55%);
+}
+
+/* ── Base atmosphere helper: put on your app root ── */
+.uikit-app {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* ── Reusable card ── */
+.uikit-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+
+/* ── Glass panel ── */
+.uikit-glass {
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid var(--border-soft);
+  border-radius: var(--r-lg);
+}
+
+/* ── Pill chip ── */
+.uikit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: var(--tint-purple);
+  border: 0.5px solid var(--border-glow);
+  color: var(--accent-purple);
+}
+
+/* ── Accessible focus ── */
+.uikit-app :focus-visible {
+  outline: 2px solid var(--accent-purple);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
