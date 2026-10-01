@@ -4,7 +4,12 @@ a teammate can read this file and know exactly why an agent did or didn't run.
 """
 from __future__ import annotations
 
-from langdetect import LangDetectException, detect
+from langdetect import DetectorFactory, LangDetectException, detect
+
+# langdetect is randomised by default: on mixed Hindi/English text it sometimes answers "hi"
+# and sometimes "en" for the same input, so routing and translation could disagree. A fixed
+# seed makes detection deterministic — the same query always gets the same answer.
+DetectorFactory.seed = 0
 
 from app.models.schemas import AgentName
 
