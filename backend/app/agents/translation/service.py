@@ -32,6 +32,14 @@ async def translate_text(text: str) -> AgentEnvelope:
         f"Translate the following text (detected language: {detected}) to English. "
         f"Return ONLY the translation, no commentary:\n\n{text}"
     )
-    translated = generate_text(prompt) or text
+    try:
+        translated = generate_text(prompt)
+    except Exception as exc:  # Gemini quota/overload/network — orchestrator falls back to the original text
+        return AgentEnvelope(
+            agent=AgentName.translation,
+            status=AgentStatus.error,
+            error=f"Gemini unavailable for translation ({type(exc).__name__})",
+        )
+    translated = translated or text
     result = TranslationResult(original_text=text, detected_language=detected, translated_text=translated.strip())
     return AgentEnvelope(agent=AgentName.translation, status=AgentStatus.ok, data=result.model_dump())

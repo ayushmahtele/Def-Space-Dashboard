@@ -46,7 +46,17 @@ async def fetch_rag(query: str) -> AgentEnvelope:
         "If the excerpts don't contain the answer, say so explicitly — do not use outside knowledge. "
         f"Cite the document name for every claim.\n\nExcerpts:\n{context}\n\nQuestion: {query}\n\nAnswer:"
     )
-    answer = generate_text(prompt) or "Gemini did not return a response."
+    try:
+        answer = generate_text(prompt)
+    except Exception:  # Gemini quota/overload/network — still return what retrieval found
+        answer = None
+    if not answer:
+        top_doc, top_meta = docs[0], metas[0]
+        excerpt = " ".join(top_doc.split())[:400]
+        answer = (
+            "Gemini is unavailable right now (quota or network), so no synthesized answer. "
+            f"Most relevant excerpt — {top_meta['document']}: \"{excerpt}...\""
+        )
 
     result = RagResult(query=query, answer=answer, sources=sources)
     return AgentEnvelope(agent=AgentName.rag, status=AgentStatus.ok, data=result.model_dump())

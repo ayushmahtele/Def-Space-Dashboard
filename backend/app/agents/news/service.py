@@ -75,27 +75,43 @@ def _clean_place_name(name: str) -> str:
     return " ".join(words)
 
 
-def build_queries(aoi_name: str, place: PlaceInfo | None) -> list[str]:
-    """Most specific search first, broadening only if it finds nothing. With location info,
-    "Kota" at 25.15, 75.85 becomes '"Kota" AND Rajasthan' (Indian sources only), so it no
-    longer matches Kota Tinggi in Malaysia."""
+def build_queries(aoi_name: str, place: PlaceInfo | None) -> list[tuple[str, str]]:
+    """(search query, term every kept article must mention), most specific first.
+
+    With location info, "Kanpur" becomes '"Kanpur" AND "Uttar Pradesh"' (Indian sources only),
+    and only articles naming Kanpur in their headline or summary are kept. Broader fallbacks
+    (district, then state) are used only when nothing local turns up — and the SITREP's
+    news query then shows that it fell back."""
     is_coords = bool(_COORD_NAME.match(aoi_name))
     name = None if is_coords else _clean_place_name(aoi_name)
     if place:
         name = name or place.place or place.district
-    queries: list[str] = []
+    queries: list[tuple[str, str]] = []
     if name and place and place.state and place.state.lower() != name.lower():
-        queries.append(f'"{name}" AND "{place.state}"')
+        queries.append((f'"{name}" AND "{place.state}"', name))
     if name:
-        queries.append(f'"{name}"')
+        queries.append((f'"{name}"', name))
     if place and place.district and (not name or place.district.lower() != name.lower()):
-        queries.append(f'"{place.district}"')
+        queries.append((f'"{place.district}"', place.district))
     if place and place.state:
-        queries.append(f'"{place.state}"')
+        queries.append((f'"{place.state}"', place.state))
     if not queries:  # raw coordinates and geocoding failed — nothing better to search for
-        queries.append(aoi_name)
+        queries.append((aoi_name, ""))
     seen: set[str] = set()
-    return [q for q in queries if not (q in seen or seen.add(q))]
+    return [q for q in queries if not (q[0] in seen or seen.add(q[0]))]
+
+
+def _mentions(article: dict, term: str) -> int:
+    """2 = term in the headline, 1 = only in the summary, 0 = not mentioned (word match,
+    so "Kota" doesn't match "Dakota")."""
+    if not term:
+        return 1
+    pattern = re.compile(rf"\b{re.escape(term)}\b", re.IGNORECASE)
+    if pattern.search(article["title"] or ""):
+        return 2
+    if pattern.search(article["snippet"] or ""):
+        return 1
+    return 0
 
 
 def _safe_error(exc: Exception) -> str:
@@ -109,7 +125,14 @@ def _safe_error(exc: Exception) -> str:
 
 
 async def _fetch_gnews(client, query: str, country: str | None = None) -> list[dict]:
-    params = {"q": query, "token": settings.gnews_api_key, "lang": "en", "max": 15, "sortby": "publishedAt"}
+    params = {
+        "q": query,
+        "token": settings.gnews_api_key,
+        "lang": "en",
+        "max": 15,
+        "sortby": "publishedAt",
+        "in": "title,description",  # don't match words buried deep in the article body
+    }
     if country in GNEWS_COUNTRIES:
         params["country"] = country
     resp = await client.get(GNEWS_URL, params=params)
@@ -161,16 +184,20 @@ async def fetch_news(query: str, lat: float | None = None, lon: float | None = N
     fetch = _fetch_gnews if settings.gnews_api_key else _fetch_newsdata
 
     raw: list[dict] = []
+    relevance: dict[str, int] = {}
     used_query: str | None = None
     last_error: Exception | None = None
     async with new_client() as client:
-        for candidate in build_queries(query, place)[:MAX_QUERY_ATTEMPTS]:
+        for candidate, term in build_queries(query, place)[:MAX_QUERY_ATTEMPTS]:
             try:
-                raw = await fetch(client, candidate, country)
+                fetched = await fetch(client, candidate, country)
             except Exception as exc:  # e.g. a 400 on an unusual query — try the next, broader one
                 last_error = exc
                 continue
             used_query = candidate
+            scored = [(a, _mentions(a, term)) for a in fetched]
+            raw = [a for a, r in scored if r > 0]  # drop articles that never name the place
+            relevance = {a["url"]: r for a, r in scored}
             if raw:
                 break
     if used_query is None:  # every attempt failed (bad key, rate limit, network)
@@ -188,7 +215,8 @@ async def fetch_news(query: str, lat: float | None = None, lon: float | None = N
     overall = round(sum(a.escalation_score for a in articles) / len(articles), 2) if articles else 0.0
     result = NewsResult(
         query=used_query,
-        articles=sorted(articles, key=lambda a: a.escalation_score, reverse=True),
+        # Articles naming the place in the headline first, then by escalation score.
+        articles=sorted(articles, key=lambda a: (relevance.get(a.url, 0), a.escalation_score), reverse=True),
         overall_escalation=overall,
         escalation_flag=overall >= ESCALATION_FLAG_THRESHOLD,
     )

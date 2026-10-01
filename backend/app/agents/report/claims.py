@@ -50,7 +50,9 @@ def build_claims(envelopes: dict[str, AgentEnvelope]) -> list[ProvenancedClaim]:
             text = f"Satellite comparison {d['date_before']} → {d['date_after']}: {d['change_percentage']}% pixel-level change detected."
             if d.get("description"):
                 text += f" Gemini vision: {d['description']}"
-            claims.append(ProvenancedClaim(text=text, source_agent=AgentName.vision, source_detail="NASA GIBS MODIS true-color tiles"))
+            url = d.get("tile_before_url") or ""
+            layer = url.split("/best/")[1].split("/")[0] if "/best/" in url else "MODIS"
+            claims.append(ProvenancedClaim(text=text, source_agent=AgentName.vision, source_detail=f"NASA GIBS true-color tiles ({layer})"))
 
     rag = envelopes.get(AgentName.rag.value)
     if rag and rag.status == AgentStatus.ok and rag.data:

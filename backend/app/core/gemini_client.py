@@ -30,16 +30,18 @@ def generate_text(prompt: str) -> Optional[str]:
     return response.text
 
 
-def generate_vision(prompt: str, image_bytes: bytes, mime_type: str = "image/png") -> Optional[str]:
+def generate_vision(
+    prompt: str, image_bytes: bytes, mime_type: str = "image/png", extra_images: Optional[list[bytes]] = None
+) -> Optional[str]:
+    """`extra_images` (same mime type) are sent after `image_bytes`, in order — e.g. a
+    before/after pair for change detection."""
     client = _client()
     if client is None:
         return None
     from google.genai import types
 
-    response = client.models.generate_content(
-        model=settings.gemini_model,
-        contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime_type), prompt],
-    )
+    parts = [types.Part.from_bytes(data=img, mime_type=mime_type) for img in [image_bytes, *(extra_images or [])]]
+    response = client.models.generate_content(model=settings.gemini_model, contents=[*parts, prompt])
     return response.text
 
 
