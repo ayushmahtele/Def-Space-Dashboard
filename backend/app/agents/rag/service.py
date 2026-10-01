@@ -2,12 +2,32 @@
 Gemini answer grounded in (and citing) the retrieved chunks only."""
 from __future__ import annotations
 
+import re
+
 from app.agents.rag.chroma_setup import get_collection
 from app.core.config import settings
 from app.core.gemini_client import generate_text
 from app.models.schemas import AgentEnvelope, AgentName, AgentStatus, RagResult, RagSource
 
 TOP_K = 4
+_URL = re.compile(r"https?://\S+|www\.\S+")
+
+
+_LIST_BULLETS = re.compile(r"[•▪●]")
+_SPACED_SLUG = re.compile(r"\w+ - \w+ - \w+")  # URL slugs broken up by the PDF-to-text step
+
+
+def _is_link_list(text: str) -> bool:
+    """True for chunks that are mostly URLs (a document's "references" section): they match
+    queries on vocabulary but contain nothing to quote or answer from."""
+    urls = _URL.findall(text)
+    prose = _URL.sub(" ", text)
+    words = re.findall(r"[^\W\d_]{2,}", prose)
+    url_chars = sum(len(u) for u in urls)
+    if len(words) < 25 or url_chars > 0.5 * len(text.strip() or "x"):
+        return True
+    # Reference lists whose links were split up by spaces: several URLs plus bullets or slug fragments.
+    return len(urls) >= 2 and (len(_LIST_BULLETS.findall(text)) >= 4 or len(_SPACED_SLUG.findall(text)) >= 2)
 
 
 async def fetch_rag(query: str) -> AgentEnvelope:
@@ -27,13 +47,16 @@ async def fetch_rag(query: str) -> AgentEnvelope:
         )
 
     try:
-        results = collection.query(query_texts=[query], n_results=min(TOP_K, collection.count()))
+        # Fetch extra candidates so there are still TOP_K left after dropping link-only chunks.
+        results = collection.query(query_texts=[query], n_results=min(TOP_K * 3, collection.count()))
     except Exception as exc:
         return AgentEnvelope(agent=AgentName.rag, status=AgentStatus.error, error=str(exc))
 
-    docs = results["documents"][0]
-    metas = results["metadatas"][0]
-    distances = results["distances"][0]
+    candidates = list(zip(results["documents"][0], results["metadatas"][0], results["distances"][0]))
+    kept = [c for c in candidates if not _is_link_list(c[0])][:TOP_K] or candidates[:TOP_K]
+    docs = [c[0] for c in kept]
+    metas = [c[1] for c in kept]
+    distances = [c[2] for c in kept]
 
     sources = [
         RagSource(document=m["document"], section=m.get("section"), score=round(1 - d, 3))

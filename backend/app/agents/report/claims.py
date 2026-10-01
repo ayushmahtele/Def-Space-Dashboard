@@ -46,13 +46,19 @@ def build_claims(envelopes: dict[str, AgentEnvelope]) -> list[ProvenancedClaim]:
     vision = envelopes.get(AgentName.vision.value)
     if vision and vision.status == AgentStatus.ok and vision.data:
         d = vision.data
+        url = d.get("tile_before_url") or ""
+        layer = url.split("/best/")[1].split("/")[0] if "/best/" in url else "MODIS"
+        source_detail = f"NASA GIBS true-color tiles ({layer}), clouds masked"
         if d.get("change_percentage") is not None:
-            text = f"Satellite comparison {d['date_before']} → {d['date_after']}: {d['change_percentage']}% pixel-level change detected."
+            text = (
+                f"Satellite comparison {d['date_before']} → {d['date_after']}: {d['change_percentage']}% change "
+                f"on the cloud-free area ({d.get('clear_overlap_pct')}% of the tile clear on both dates)."
+            )
             if d.get("description"):
                 text += f" Gemini vision: {d['description']}"
-            url = d.get("tile_before_url") or ""
-            layer = url.split("/best/")[1].split("/")[0] if "/best/" in url else "MODIS"
-            claims.append(ProvenancedClaim(text=text, source_agent=AgentName.vision, source_detail=f"NASA GIBS true-color tiles ({layer})"))
+            claims.append(ProvenancedClaim(text=text, source_agent=AgentName.vision, source_detail=source_detail))
+        elif d.get("note"):
+            claims.append(ProvenancedClaim(text=d["note"], source_agent=AgentName.vision, source_detail=source_detail))
 
     rag = envelopes.get(AgentName.rag.value)
     if rag and rag.status == AgentStatus.ok and rag.data:

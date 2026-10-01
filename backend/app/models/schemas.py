@@ -140,6 +140,11 @@ class VisionResult(BaseModel):
     change_percentage: Optional[float] = None
     description: Optional[str] = None
     confidence: Optional[float] = None
+    # Cloud handling — change is measured only where the ground is visible on both dates.
+    cloud_cover_before_pct: Optional[float] = None
+    cloud_cover_after_pct: Optional[float] = None
+    clear_overlap_pct: Optional[float] = None
+    note: Optional[str] = None  # e.g. "Too cloudy to compare ..."
 
 
 # ---------------------------------------------------------------------------
