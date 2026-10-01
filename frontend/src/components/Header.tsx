@@ -19,13 +19,13 @@ interface Props {
 
 export function Header({ geminiConfigured, newsConfigured, viewMode, onViewModeChange, page, onPageChange }: Props) {
   return (
-    <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-ops-border bg-ops-panel px-4 py-3">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-ops-border bg-ops-panel px-4 py-3 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-4">
       <div className="flex items-center gap-3 justify-self-start">
         <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-ops-accent" />
         <h1 className="font-mono text-sm font-semibold tracking-widest text-ops-text">DEF-SPACE</h1>
       </div>
 
-      <nav className="flex items-center gap-1 justify-self-center font-mono text-xs">
+      <nav className="order-last flex w-full items-center gap-1 overflow-x-auto font-mono text-xs lg:order-none lg:w-auto lg:justify-self-center">
         {NAV_ITEMS.map((item) => (
           <button
             key={item.id}

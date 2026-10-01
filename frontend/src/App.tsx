@@ -94,7 +94,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex min-h-screen flex-col lg:h-screen">
       <Header
         geminiConfigured={health?.gemini_configured ?? null}
         newsConfigured={health?.news_configured ?? null}
@@ -113,8 +113,8 @@ export default function App() {
       {page === "model-performance" && <ModelPerformancePage />}
 
       {page === "dashboard" && (
-        <div className="flex min-h-0 flex-1">
-          <aside data-tutorial="watchlist" className="w-64 shrink-0 border-r border-ops-border bg-ops-panel/40 p-3">
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+          <aside data-tutorial="watchlist" className="max-h-56 w-full shrink-0 overflow-y-auto border-b border-ops-border bg-ops-panel/40 p-3 lg:max-h-none lg:w-64 lg:overflow-visible lg:border-b-0 lg:border-r">
             <Watchlist
               aois={aois}
               activeName={activeAoi?.name ?? null}
@@ -125,12 +125,12 @@ export default function App() {
             />
           </aside>
 
-          <main className="flex min-w-0 flex-1 gap-3 p-3">
-            <div data-tutorial="map" className="w-1/2 min-w-0">
+          <main className="flex min-w-0 flex-1 flex-col gap-3 p-3 lg:flex-row">
+            <div data-tutorial="map" className="h-[55vh] w-full min-w-0 lg:h-auto lg:w-1/2">
               <MapView aoi={activeAoi} features={features} onMapClick={handleMapClick} />
             </div>
 
-            <div className="flex w-1/2 min-w-0 flex-col gap-3">
+            <div className="flex w-full min-w-0 flex-col gap-3 lg:w-1/2">
               <div data-tutorial="query">
                 <QueryBox
                   disabled={!activeAoi}
@@ -138,7 +138,7 @@ export default function App() {
                   onSubmit={handleQuery}
                 />
               </div>
-              <div data-tutorial="sitrep" className="min-h-0 flex-1 overflow-y-auto pr-1">
+              <div data-tutorial="sitrep" className="min-h-0 flex-1 pr-1 lg:overflow-y-auto">
                 <SitrepFeed sitreps={sitreps} compact={viewMode === "commander"} />
                 {predictResult && (
                   <div className="mt-3">
