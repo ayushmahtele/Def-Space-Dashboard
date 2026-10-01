@@ -51,9 +51,12 @@ for router in (
 
 
 @app.get("/health")
+@app.get("/status")
 async def health() -> dict:
     return {
         "status": "ok",
         "gemini_configured": settings.has_gemini,
         "news_configured": settings.has_news,
     }
+
+

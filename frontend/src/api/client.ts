@@ -15,7 +15,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  health: () => request<{ status: string; gemini_configured: boolean; news_configured: boolean }>("/health"),
+  health: () => request<{ status: string; gemini_configured: boolean; news_configured: boolean }>("/status"),
 
   listWatchlist: () => request<AOI[]>("/watchlist"),
   addToWatchlist: (aoi: AOI) =>
